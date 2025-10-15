@@ -14,13 +14,178 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      public_games: {
+        Row: {
+          created_at: string
+          fork_count: number | null
+          fork_of: string | null
+          id: string
+          nsfw: boolean | null
+          spec: Json
+          tagline: string | null
+          tags: string[] | null
+          title: string
+          user_id: string
+          version: string
+          view_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          fork_count?: number | null
+          fork_of?: string | null
+          id?: string
+          nsfw?: boolean | null
+          spec: Json
+          tagline?: string | null
+          tags?: string[] | null
+          title: string
+          user_id: string
+          version: string
+          view_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          fork_count?: number | null
+          fork_of?: string | null
+          id?: string
+          nsfw?: boolean | null
+          spec?: Json
+          tagline?: string | null
+          tags?: string[] | null
+          title?: string
+          user_id?: string
+          version?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_public_games_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "public_games_fork_of_fkey"
+            columns: ["fork_of"]
+            isOneToOne: false
+            referencedRelation: "public_games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "public_games_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          photo_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          photo_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          photo_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          photo_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+          photo_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          photo_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_expired_claim_tokens: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      get_game_public: {
+        Args: { game_id: string }
+        Returns: {
+          created_at: string
+          fork_count: number
+          fork_of: string
+          id: string
+          nsfw: boolean
+          spec: Json
+          tagline: string
+          tags: string[]
+          title: string
+          user_id: string
+          version: string
+          view_count: number
+        }[]
+      }
+      get_public_profile: {
+        Args: { profile_user_id: string }
+        Returns: {
+          created_at: string
+          display_name: string
+          id: string
+          photo_url: string
+        }[]
+      }
+      get_public_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          display_name: string
+          id: string
+          photo_url: string
+        }[]
+      }
+      increment_game_fork_count: {
+        Args: { game_id: string }
+        Returns: undefined
+      }
+      increment_game_view_count: {
+        Args: { game_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

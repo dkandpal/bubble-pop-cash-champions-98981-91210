@@ -113,54 +113,62 @@ export const GameCanvas = ({
       return;
     }
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const atlasSize = dpr >= 2 ? 128 : 64;
+    // Check if atlas files exist before attempting full load
+    fetch("/sprites/atlas.json", { method: "HEAD" })
+      .then(res => {
+        if (!res.ok) {
+          // Atlas doesn't exist - this is OK, use spritesheet fallback
+          console.log("ℹ️ Atlas files not found (expected if not yet generated). Using spritesheet fallback.");
+          setAtlasLoaded(false);
+          return;
+        }
 
-    console.log("🎯 Loading sprite atlas...");
+        // Atlas exists, proceed with full load
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const atlasSize = dpr >= 2 ? 128 : 64;
 
-    Promise.all([
-      fetch("/sprites/atlas.json").then(r => {
-        if (!r.ok) throw new Error(`Atlas manifest not found: ${r.status}`);
-        return r.json();
-      }),
-      new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image();
-        const tryWebp = `/sprites/atlas-${atlasSize}.webp`;
-        const tryPng = `/sprites/atlas-${atlasSize}.png`;
-        
-        img.onload = () => resolve(img);
-        img.onerror = () => {
-          console.warn("WebP failed, trying PNG fallback");
-          const fallbackImg = new Image();
-          fallbackImg.onload = () => resolve(fallbackImg);
-          fallbackImg.onerror = reject;
-          fallbackImg.src = tryPng;
-        };
-        img.src = tryWebp;
-      })
-    ])
-      .then(([manifest, img]) => {
-        console.log(`✓ Atlas loaded: ${Object.keys(manifest.sprites).length} sprites`);
-        setAtlasManifest(manifest);
-        setAtlasImage(img);
-        
-        // Pre-pick sprite IDs for each bubble color/label
-        const pickedIds: Record<string, string> = {};
-        theme.bubbles.set.forEach(bubble => {
-          const tags = bubble.tags || [];
-          const spriteId = pickSpriteIdFromManifest(manifest, tags);
-          // Store by BOTH label and hex for flexible lookup
-          pickedIds[bubble.label] = spriteId;
-          pickedIds[bubble.hex] = spriteId;
-          console.log(`  ${bubble.label} → ${spriteId} (tags: ${tags.join(', ')})`);
+        console.log("🎯 Loading sprite atlas...");
+
+        return Promise.all([
+          fetch("/sprites/atlas.json").then(r => r.json()),
+          new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = new Image();
+            const tryWebp = `/sprites/atlas-${atlasSize}.webp`;
+            const tryPng = `/sprites/atlas-${atlasSize}.png`;
+            
+            img.onload = () => resolve(img);
+            img.onerror = () => {
+              console.warn("WebP failed, trying PNG fallback");
+              const fallbackImg = new Image();
+              fallbackImg.onload = () => resolve(fallbackImg);
+              fallbackImg.onerror = reject;
+              fallbackImg.src = tryPng;
+            };
+            img.src = tryWebp;
+          })
+        ])
+        .then(([manifest, img]) => {
+          console.log(`✓ Atlas loaded: ${Object.keys(manifest.sprites).length} sprites`);
+          setAtlasManifest(manifest);
+          setAtlasImage(img);
+          
+          // Pre-pick sprite IDs for each bubble color/label
+          const pickedIds: Record<string, string> = {};
+          theme.bubbles.set.forEach(bubble => {
+            const tags = bubble.tags || [];
+            const spriteId = pickSpriteIdFromManifest(manifest, tags);
+            // Store by BOTH label and hex for flexible lookup
+            pickedIds[bubble.label] = spriteId;
+            pickedIds[bubble.hex] = spriteId;
+            console.log(`  ${bubble.label} → ${spriteId} (tags: ${tags.join(', ')})`);
+          });
+          
+          setAtlasSpriteIds(pickedIds);
+          setAtlasLoaded(true);
         });
-        
-        setAtlasSpriteIds(pickedIds);
-        setAtlasLoaded(true);
       })
       .catch(err => {
-        console.error("✗ Failed to load atlas:", err);
-        console.warn("⚠️ Falling back to emoji rendering. Run 'npm run build:atlas' to generate sprite atlas.");
+        console.log("ℹ️ Atlas unavailable, using spritesheet fallback:", err.message);
         setAtlasLoaded(false);
         setAtlasImage(null);
         setAtlasManifest(null);

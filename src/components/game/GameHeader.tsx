@@ -34,13 +34,24 @@ export const GameHeader = ({ score, timeRemaining, maxCombo, theme, bubblesPoppe
   // Load atlas if in atlas mode
   useEffect(() => {
     if (theme.bubbles.atlasMode) {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const atlasSize = (dpr >= 2 ? 128 : 64) as 64 | 128;
-      
-      loadAtlas(atlasSize)
-        .then(data => setAtlasData(data))
+      // Check if atlas files exist before attempting load
+      fetch("/sprites/atlas.json", { method: "HEAD" })
+        .then(res => {
+          if (!res.ok) {
+            console.log("ℹ️ Atlas files not found in GameHeader. Using spritesheet fallback.");
+            setAtlasData(null);
+            return;
+          }
+          
+          // Atlas exists, proceed with load
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          const atlasSize = (dpr >= 2 ? 128 : 64) as 64 | 128;
+          
+          return loadAtlas(atlasSize)
+            .then(data => setAtlasData(data));
+        })
         .catch(err => {
-          console.warn("Atlas load failed in GameHeader:", err);
+          console.log("ℹ️ Atlas unavailable in GameHeader:", err.message);
           setAtlasData(null);
         });
     }

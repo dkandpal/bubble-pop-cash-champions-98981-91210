@@ -75,6 +75,27 @@ export const GameCanvas = ({
     bubbleColors.push(b.hex);
   });
 
+  // Debug: Log color mapping on mount
+  useEffect(() => {
+    console.log("🎨 Bubble color mapping initialized:");
+    console.log("  Theme:", theme.themeName);
+    console.log("  Colors:", bubbleColors);
+    console.log("  Color map:", colorMap);
+    console.log("  Spritesheet:", theme.bubbles.spritesheet || "none (using emoji)");
+    
+    // Validate emojis in theme
+    theme.bubbles.set.forEach((b, i) => {
+      const isValidEmoji = b.emoji && b.emoji.length <= 4 && !/^[a-zA-Z\s]+$/.test(b.emoji);
+      if (!isValidEmoji) {
+        console.error(`✗ Invalid emoji at index ${i}:`, {
+          label: b.label,
+          emoji: b.emoji,
+          reason: b.emoji?.length > 4 ? "too long" : "contains text instead of emoji"
+        });
+      }
+    });
+  }, [theme]);
+
   // Preload spritesheet image
   useEffect(() => {
     const spritesheet = theme.bubbles.spritesheet;
@@ -85,12 +106,14 @@ export const GameCanvas = ({
 
     const img = new Image();
     img.onload = () => {
-      console.log("Bubble spritesheet loaded successfully");
+      console.log("✓ Bubble spritesheet loaded successfully:", spritesheet);
       setSpritesheetImage(img);
       setSpritesheetLoaded(true);
     };
-    img.onerror = () => {
-      console.warn("Failed to load bubble spritesheet, falling back to emoji");
+    img.onerror = (e) => {
+      console.warn("✗ Failed to load bubble spritesheet, falling back to emoji");
+      console.warn("  Spritesheet URL:", spritesheet);
+      console.warn("  Error:", e);
       setSpritesheetLoaded(false);
     };
     img.src = spritesheet;
@@ -362,15 +385,29 @@ export const GameCanvas = ({
           );
           
           ctx.restore();
+        } else {
+          console.warn("⚠ Spritesheet icon index out of range:", { 
+            color: bubble.color, 
+            hexColor, 
+            iconIndex,
+            totalColors: bubbleColors.length 
+          });
         }
       } else if (bubble.emoji) {
         // Fallback: render emoji as before (but validate it's not text)
-        const isValidEmoji = bubble.emoji.length <= 4 && !/^[a-zA-Z]+$/.test(bubble.emoji);
+        const isValidEmoji = bubble.emoji.length <= 4 && !/^[a-zA-Z\s]+$/.test(bubble.emoji);
         if (isValidEmoji) {
           ctx.font = `${20 * scale}px Arial`; // Reduced from 24px
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(bubble.emoji, bubble.x, bubble.y);
+        } else {
+          console.error("✗ Invalid emoji detected in bubble:", {
+            color: bubble.color,
+            emoji: bubble.emoji,
+            length: bubble.emoji.length,
+            reason: "Text word instead of emoji character"
+          });
         }
       }
 

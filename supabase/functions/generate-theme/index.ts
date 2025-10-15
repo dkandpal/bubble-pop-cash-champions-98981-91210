@@ -123,13 +123,28 @@ Schema (all keys required):
   }
 }
 
-Generation rules:
+CRITICAL EMOJI REQUIREMENTS (read this first):
+- The "emoji" field MUST be an actual Unicode emoji character (🪼🐚🐠🦀🪸🐙), NEVER English words.
+- If you write "shell" or "starfish" or any text instead of an emoji, YOUR RESPONSE WILL BE REJECTED.
+- Each emoji must be a SINGLE visible symbol that renders as an icon/image in apps.
+- Test yourself: Does it look like 🐚 or like "shell"? Only the first is valid.
+
+VALID examples:
+✓ {"emoji":"🐚"} - This is a shell emoji
+✓ {"emoji":"🦀"} - This is a crab emoji  
+✓ {"emoji":"🪼"} - This is a jellyfish emoji
+✓ {"emoji":"⭐"} - This is a star emoji
+
+INVALID examples (WILL CAUSE REJECTION):
+✗ {"emoji":"shell"} - This is text, not an emoji
+✗ {"emoji":"crab"} - This is text, not an emoji
+✗ {"emoji":"starfish"} - This is text, not an emoji
+✗ {"emoji":"star"} - This is text, not an emoji
+
+Other rules:
 - Prioritize legibility: emoji centered inside each bubble circle; do not overflow edges.
 - Keep color palette consistent with background and UI; meet the stated contrast ratio for text vs. surfaces.
-- CRITICAL: The "emoji" field MUST contain actual Unicode emoji characters (🪼🐚🐠🦀🪸🐙), NEVER text labels like "starfish" or "shell". Each emoji must be a single Unicode glyph that renders as an image, not a word.
-- Emojis must match the theme (e.g., ocean: 🪼🐚🐠; space: 🪐⭐️🛸). Avoid faces unless theme demands.
-- DO: {"emoji":"🐚"} or {"emoji":"🦀"} or {"emoji":"🪼"}
-- DON'T: {"emoji":"shell"} or {"emoji":"crab"} or {"emoji":"starfish"}
+- Emojis must match the theme (e.g., ocean: 🪼🐚🐠; space: 🪐⭐🛸). Avoid faces unless theme demands.
 - Tune copy to be short, upbeat, and theme-aligned.
 - Always fill all keys; return compact minified JSON only.`;
 
@@ -186,6 +201,60 @@ Generation rules:
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // PHASE 1: Validate that emoji fields contain actual emojis, not text
+    const validateEmojis = (theme: any): { valid: boolean; errors: string[] } => {
+      const errors: string[] = [];
+      
+      if (!theme.bubbles?.set || !Array.isArray(theme.bubbles.set)) {
+        errors.push("Missing bubbles.set array");
+        return { valid: false, errors };
+      }
+
+      theme.bubbles.set.forEach((bubble: any, index: number) => {
+        if (!bubble.emoji) {
+          errors.push(`Bubble ${index} (${bubble.label}) missing emoji field`);
+          return;
+        }
+
+        const emoji = bubble.emoji;
+        
+        // Check if it's just ASCII text (common AI mistake)
+        if (/^[a-zA-Z\s]+$/.test(emoji)) {
+          errors.push(`Bubble ${index} (${bubble.label}) has text "${emoji}" instead of emoji`);
+          return;
+        }
+
+        // Check if it's suspiciously long (emojis are typically 1-4 chars in length)
+        if (emoji.length > 6) {
+          errors.push(`Bubble ${index} (${bubble.label}) has suspiciously long emoji: "${emoji}"`);
+          return;
+        }
+
+        // Check if it contains common text words that AI might use
+        const textWords = ['shell', 'fish', 'crab', 'star', 'octopus', 'jellyfish', 'planet', 'rocket', 'alien', 'ufo'];
+        if (textWords.some(word => emoji.toLowerCase().includes(word))) {
+          errors.push(`Bubble ${index} (${bubble.label}) contains text word in emoji field: "${emoji}"`);
+        }
+      });
+
+      return { valid: errors.length === 0, errors };
+    };
+
+    const emojiValidation = validateEmojis(parsedTheme);
+    
+    if (!emojiValidation.valid) {
+      console.error("Emoji validation failed:", emojiValidation.errors);
+      return new Response(JSON.stringify({ 
+        error: "AI generated invalid emojis",
+        details: emojiValidation.errors 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log("✓ Emoji validation passed - all bubbles have valid emoji characters");
 
     // Generate hero banner image
     let heroBannerImage: string | undefined;

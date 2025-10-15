@@ -53,7 +53,12 @@ export default function PlayGame() {
     if (isCompetitive && user) {
       try {
         const clientSessionId = crypto.randomUUID();
-        const response = await competitionService.submitEntry(gameStats, clientSessionId);
+        // Ensure duration is at least 1 second for competitive play
+        const competitiveStats = {
+          ...gameStats,
+          timeElapsed: Math.max(1, gameStats.timeElapsed)
+        };
+        const response = await competitionService.submitEntry(competitiveStats, clientSessionId);
         
         if (response.state === 'waiting') {
           navigate(`/compete/waiting/${response.entry_id}`, {

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Home, PlayCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, Home, PlayCircle, CheckCircle2, AlertCircle } from "lucide-react";
 import { competitionService, MatchStatusResponse } from "@/services/CompetitionService";
 import { toast } from "sonner";
 
@@ -21,6 +21,7 @@ export function WaitingScreen() {
   const submittedStats = location.state as SubmittedStats | undefined;
   const [status, setStatus] = useState<MatchStatusResponse | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!matchId) {
@@ -34,6 +35,7 @@ export function WaitingScreen() {
       try {
         const response = await competitionService.getMatchStatus(matchId);
         setStatus(response);
+        setError(null);
 
         if (response.state === "completed" && response.results) {
           clearInterval(interval);
@@ -47,6 +49,7 @@ export function WaitingScreen() {
         }
       } catch (error) {
         console.error("Failed to fetch match status:", error);
+        setError("Failed to check match status. Retrying...");
       }
     };
 
@@ -79,7 +82,7 @@ export function WaitingScreen() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (!status) {
+  if (!status && !submittedStats) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -172,6 +175,16 @@ export function WaitingScreen() {
                 <p className="text-sm text-muted-foreground">Time</p>
                 <p className="text-2xl font-bold">{formatTimeElapsed(submittedStats.timeElapsed)}</p>
               </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <Card className="p-4 bg-destructive/10 border-destructive/20">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="w-5 h-5" />
+              <p className="text-sm font-medium">{error}</p>
             </div>
           </Card>
         )}

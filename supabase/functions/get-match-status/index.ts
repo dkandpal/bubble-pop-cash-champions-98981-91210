@@ -29,9 +29,19 @@ serve(async (req) => {
       .from('matches')
       .select('*')
       .eq('id', match_id)
-      .single();
+      .maybeSingle();
 
     if (matchError) throw matchError;
+
+    if (!match) {
+      return new Response(JSON.stringify({ 
+        error: 'Match not found',
+        state: 'not_found' 
+      }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     if (match.state === 'completed') {
       const { data: results, error: resultsError } = await supabase
@@ -42,7 +52,7 @@ serve(async (req) => {
           entry_b:entries!match_results_entry_b_id_fkey(player:players(handle))
         `)
         .eq('match_id', match_id)
-        .single();
+        .maybeSingle();
 
       if (resultsError) throw resultsError;
 

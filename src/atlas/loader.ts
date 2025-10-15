@@ -20,8 +20,9 @@ export async function loadAtlas(size: AtlasSize): Promise<LoadedAtlas> {
   try {
     // Load manifest
     const manifestRes = await fetch("/sprites/atlas.json");
-    if (!manifestRes.ok) {
-      throw new Error(`Failed to load atlas manifest: ${manifestRes.status}`);
+    const contentType = manifestRes.headers.get('Content-Type');
+    if (!manifestRes.ok || !contentType?.includes('application/json')) {
+      throw new Error(`Atlas manifest not found or invalid content type`);
     }
     const manifest: AtlasManifest = await manifestRes.json();
 

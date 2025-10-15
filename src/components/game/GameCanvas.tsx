@@ -116,7 +116,8 @@ export const GameCanvas = ({
     // Check if atlas files exist before attempting full load
     fetch("/sprites/atlas.json", { method: "HEAD" })
       .then(res => {
-        if (!res.ok) {
+        const contentType = res.headers.get('Content-Type');
+        if (!res.ok || !contentType?.includes('application/json')) {
           // Atlas doesn't exist - this is OK, use spritesheet fallback
           console.log("ℹ️ Atlas files not found (expected if not yet generated). Using spritesheet fallback.");
           setAtlasLoaded(false);

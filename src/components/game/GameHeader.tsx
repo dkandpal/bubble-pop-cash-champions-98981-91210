@@ -37,7 +37,8 @@ export const GameHeader = ({ score, timeRemaining, maxCombo, theme, bubblesPoppe
       // Check if atlas files exist before attempting load
       fetch("/sprites/atlas.json", { method: "HEAD" })
         .then(res => {
-          if (!res.ok) {
+          const contentType = res.headers.get('Content-Type');
+          if (!res.ok || !contentType?.includes('application/json')) {
             console.log("ℹ️ Atlas files not found in GameHeader. Using spritesheet fallback.");
             setAtlasData(null);
             return;

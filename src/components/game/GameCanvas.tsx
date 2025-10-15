@@ -107,6 +107,9 @@ export const GameCanvas = ({
   useEffect(() => {
     if (!theme.bubbles.atlasMode) {
       setAtlasLoaded(false);
+      setAtlasImage(null);
+      setAtlasManifest(null);
+      setAtlasSpriteIds({});
       return;
     }
 
@@ -116,7 +119,10 @@ export const GameCanvas = ({
     console.log("🎯 Loading sprite atlas...");
 
     Promise.all([
-      fetch("/sprites/atlas.json").then(r => r.json()),
+      fetch("/sprites/atlas.json").then(r => {
+        if (!r.ok) throw new Error(`Atlas manifest not found: ${r.status}`);
+        return r.json();
+      }),
       new Promise<HTMLImageElement>((resolve, reject) => {
         const img = new Image();
         const tryWebp = `/sprites/atlas-${atlasSize}.webp`;
@@ -151,8 +157,11 @@ export const GameCanvas = ({
         setAtlasLoaded(true);
       })
       .catch(err => {
-        console.warn("Atlas loading failed, falling back to spritesheet/emoji:", err);
+        console.error("✗ Failed to load atlas:", err);
+        console.warn("⚠️ Falling back to emoji rendering. Run 'npm run build:atlas' to generate sprite atlas.");
         setAtlasLoaded(false);
+        setAtlasImage(null);
+        setAtlasManifest(null);
       });
   }, [theme]);
 
@@ -450,25 +459,30 @@ export const GameCanvas = ({
       ctx.stroke();
 
       // Draw icon: Priority = atlas > spritesheet > emoji
-      if (atlasLoaded && atlasManifest && atlasImage && atlasSpriteIds[bubble.color]) {
-        // NEW: Use sprite atlas
+      if (atlasLoaded && atlasManifest && atlasImage) {
         const spriteId = atlasSpriteIds[bubble.color];
-        const sprite = atlasManifest.sprites[spriteId];
-        if (sprite) {
-          const dpr = Math.min(window.devicePixelRatio || 1, 2);
-          const atlasSize = dpr >= 2 ? 128 : 64;
-          const frame = sprite.frames[atlasSize];
-          
-          if (frame) {
-            const iconScale = (BUBBLE_RADIUS * 2 * scale * 0.7) / frame.w;
-            ctx.drawImage(
-              atlasImage,
-              frame.x, frame.y, frame.w, frame.h,
-              bubble.x - (frame.w * iconScale) / 2,
-              bubble.y - (frame.h * iconScale) / 2,
-              frame.w * iconScale,
-              frame.h * iconScale
-            );
+        if (spriteId) {
+          const sprite = atlasManifest.sprites[spriteId];
+          if (sprite) {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const atlasSize = dpr >= 2 ? 128 : 64;
+            const frame = sprite.frames[atlasSize];
+            
+            if (frame) {
+              const iconScale = (BUBBLE_RADIUS * 2 * scale * 0.7) / frame.w;
+              ctx.drawImage(
+                atlasImage,
+                frame.x, frame.y, frame.w, frame.h,
+                bubble.x - (frame.w * iconScale) / 2,
+                bubble.y - (frame.h * iconScale) / 2,
+                frame.w * iconScale,
+                frame.h * iconScale
+              );
+            } else {
+              console.warn(`⚠ No frame found for sprite ${spriteId} at size ${atlasSize}`);
+            }
+          } else {
+            console.warn(`⚠ Sprite not found: ${spriteId}`);
           }
         }
       }

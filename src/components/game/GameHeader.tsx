@@ -2,6 +2,7 @@ import { Clock, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSound } from "@/hooks/useSound";
 import { GameTheme } from "@/types/theme";
+import { loadAtlas, pickSpriteId, drawSprite } from "@/atlas";
 
 interface GameHeaderProps {
   score: number;
@@ -20,6 +21,7 @@ export const GameHeader = ({ score, timeRemaining, maxCombo, theme, bubblesPoppe
   const INITIAL_TIME = 120;
   
   const [spritesheetImage, setSpritesheetImage] = useState<HTMLImageElement | null>(null);
+  const [atlasData, setAtlasData] = useState<{ manifest: any; image: HTMLImageElement; size: number } | null>(null);
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
 
   useEffect(() => {
@@ -29,18 +31,81 @@ export const GameHeader = ({ score, timeRemaining, maxCombo, theme, bubblesPoppe
     prevTimeRef.current = timeRemaining;
   }, [timeRemaining, tick]);
 
-  // Load spritesheet
+  // Load atlas if in atlas mode
   useEffect(() => {
-    if (!spritesheetUrl) return;
+    if (theme.bubbles.atlasMode) {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const atlasSize = (dpr >= 2 ? 128 : 64) as 64 | 128;
+      
+      loadAtlas(atlasSize)
+        .then(data => setAtlasData(data))
+        .catch(err => {
+          console.warn("Atlas load failed in GameHeader:", err);
+          setAtlasData(null);
+        });
+    }
+  }, [theme.bubbles.atlasMode]);
+
+  // Load spritesheet (legacy)
+  useEffect(() => {
+    if (!spritesheetUrl || theme.bubbles.atlasMode) return;
     
     const img = new Image();
     img.onload = () => setSpritesheetImage(img);
     img.onerror = () => setSpritesheetImage(null);
     img.src = spritesheetUrl;
-  }, [spritesheetUrl]);
+  }, [spritesheetUrl, theme.bubbles.atlasMode]);
 
   // Draw bubble icons on canvases
   useEffect(() => {
+    // Atlas mode
+    if (atlasData) {
+      theme.bubbles.set.forEach((bubble) => {
+        const canvas = canvasRefs.current[bubble.hex];
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const size = 32;
+        canvas.width = size;
+        canvas.height = size;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, size, size);
+
+        // Draw glossy circle background
+        const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+        gradient.addColorStop(0, bubble.hex + 'dd');
+        gradient.addColorStop(0.7, bubble.hex);
+        gradient.addColorStop(1, bubble.hex + '99');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw shine
+        const shineGradient = ctx.createRadialGradient(size / 2 - 4, size / 2 - 4, 0, size / 2, size / 2, size / 2);
+        shineGradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+        shineGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)');
+        shineGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        
+        ctx.fillStyle = shineGradient;
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw sprite from atlas
+        const spriteId = pickSpriteId(atlasData.manifest, bubble.tags || []);
+        if (spriteId) {
+          drawSprite(ctx, atlasData.image, atlasData.manifest, spriteId, atlasData.size, size / 2, size / 2, 0.6);
+        }
+      });
+      return;
+    }
+
+    // Legacy spritesheet mode
     if (!spritesheetImage) return;
 
     theme.bubbles.set.forEach((bubble, index) => {
@@ -95,7 +160,7 @@ export const GameHeader = ({ score, timeRemaining, maxCombo, theme, bubblesPoppe
         iconX, iconY, iconDrawSize, iconDrawSize
       );
     });
-  }, [spritesheetImage, theme.bubbles.set]);
+  }, [atlasData, spritesheetImage, theme.bubbles.set]);
 
   return (
     <div className="px-4 py-3 bg-card/80 backdrop-blur-sm rounded-2xl shadow-card mb-4">
@@ -140,7 +205,7 @@ export const GameHeader = ({ score, timeRemaining, maxCombo, theme, bubblesPoppe
       <div className="flex justify-between items-center gap-2 mt-3 pt-3 border-t border-border/50">
         {theme.bubbles.set.map((bubble) => (
           <div key={bubble.hex} className="flex flex-col items-center gap-1 flex-1">
-            {spritesheetImage ? (
+            {atlasData || spritesheetImage ? (
               <canvas
                 ref={(el) => (canvasRefs.current[bubble.hex] = el)}
                 className="w-8 h-8"

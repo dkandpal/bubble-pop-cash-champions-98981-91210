@@ -61,9 +61,10 @@ serve(async (req) => {
       .single();
 
     if (existingEntry) {
-      console.log('Duplicate submission detected, returning existing match');
+      console.log('Duplicate submission detected, checking status');
       
       if (existingEntry.match_id) {
+        // Entry has been matched, check match status
         const { data: match } = await supabase
           .from('matches')
           .select('state')
@@ -93,10 +94,12 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
-
+      } else {
+        // Entry exists but no match yet - still waiting for opponent
+        console.log('Entry still waiting for opponent');
         return new Response(JSON.stringify({
           state: 'waiting',
-          match_id: existingEntry.match_id
+          entry_id: existingEntry.id
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
@@ -211,31 +214,14 @@ serve(async (req) => {
       });
     }
 
-    // No opponent found, create open match
-    console.log('No opponent found, creating open match');
+    // No opponent found - entry stays pending with null match_id
+    console.log('No opponent found, entry will wait for matchmaking');
 
-    const { data: openMatch, error: openMatchError } = await supabase
-      .from('matches')
-      .insert({
-        game_key,
-        rules_version,
-        state: 'open',
-        expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString()
-      })
-      .select()
-      .single();
-
-    if (openMatchError) throw openMatchError;
-
-    // Update entry with match_id but keep status as 'pending' - still waiting for opponent
-    await supabase
-      .from('entries')
-      .update({ match_id: openMatch.id, status: 'pending' })
-      .eq('id', newEntry.id);
-
+    // Entry already exists with match_id: null and status: 'pending'
+    // Frontend will retry submission, and idempotency check will handle it
     return new Response(JSON.stringify({
       state: 'waiting',
-      match_id: openMatch.id
+      entry_id: newEntry.id
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

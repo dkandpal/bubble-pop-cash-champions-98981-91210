@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Sky gradient background */
+    --background: 210 100% 97%;
+    --foreground: 240 10% 20%;
+
+    /* Game UI colors */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 20%;
+
+    /* Primary button - vibrant purple */
+    --primary: 270 80% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary button - bright pink */
+    --secondary: 330 80% 60%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Accent - electric blue */
+    --accent: 200 90% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 270 80% 60%;
+
+    --radius: 1rem;
+
+    /* Bubble colors */
+    --bubble-red: 0 85% 60%;
+    --bubble-orange: 30 90% 60%;
+    --bubble-yellow: 50 95% 55%;
+    --bubble-green: 140 70% 50%;
+    --bubble-blue: 210 85% 60%;
+    --bubble-purple: 270 75% 60%;
+    --bubble-pink: 330 80% 65%;
+
+    /* Gradients */
+    --gradient-sky: linear-gradient(180deg, hsl(210, 100%, 85%) 0%, hsl(200, 100%, 95%) 100%);
+    --gradient-button: linear-gradient(135deg, hsl(270, 80%, 65%), hsl(330, 80%, 65%));
+    --gradient-game-bg: linear-gradient(180deg, hsl(210, 100%, 92%) 0%, hsl(200, 80%, 88%) 100%);
+    
+    /* Shadows and glows */
+    --shadow-bubble: 0 4px 12px hsl(0 0% 0% / 0.15);
+    --glow-button: 0 0 20px hsl(270 80% 60% / 0.4);
+    --shadow-card: 0 8px 24px hsl(0 0% 0% / 0.12);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.bg-gradient-game {
+  background: linear-gradient(180deg, hsl(210, 100%, 92%) 0%, hsl(200, 80%, 88%) 50%, hsl(210, 100%, 92%) 100%);
+  background-size: 200% 200%;
+  animation: gradient-shift 25s ease infinite;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

@@ -61,6 +61,12 @@ export const GameCanvas = ({
   const lastFrameTimeRef = useRef(performance.now());
   const [spritesheetImage, setSpritesheetImage] = useState<HTMLImageElement | null>(null);
   const [spritesheetLoaded, setSpritesheetLoaded] = useState(false);
+  
+  // Atlas system state
+  const [atlasImage, setAtlasImage] = useState<HTMLImageElement | null>(null);
+  const [atlasManifest, setAtlasManifest] = useState<any>(null);
+  const [atlasLoaded, setAtlasLoaded] = useState(false);
+  const [atlasSpriteIds, setAtlasSpriteIds] = useState<Record<string, string>>({});
 
   const CANVAS_WIDTH = 450;
   const CANVAS_HEIGHT = 600;
@@ -81,7 +87,8 @@ export const GameCanvas = ({
     console.log("  Theme:", theme.themeName);
     console.log("  Colors:", bubbleColors);
     console.log("  Color map:", colorMap);
-    console.log("  Spritesheet:", theme.bubbles.spritesheet || "none (using emoji)");
+    console.log("  Atlas mode:", theme.bubbles.atlasMode);
+    console.log("  Spritesheet:", theme.bubbles.spritesheet || "none");
     
     // Validate emojis in theme
     theme.bubbles.set.forEach((b, i) => {
@@ -94,6 +101,59 @@ export const GameCanvas = ({
         });
       }
     });
+  }, [theme]);
+
+  // Load sprite atlas if enabled
+  useEffect(() => {
+    if (!theme.bubbles.atlasMode) {
+      setAtlasLoaded(false);
+      return;
+    }
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const atlasSize = dpr >= 2 ? 128 : 64;
+
+    console.log("🎯 Loading sprite atlas...");
+
+    Promise.all([
+      fetch("/sprites/atlas.json").then(r => r.json()),
+      new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        const tryWebp = `/sprites/atlas-${atlasSize}.webp`;
+        const tryPng = `/sprites/atlas-${atlasSize}.png`;
+        
+        img.onload = () => resolve(img);
+        img.onerror = () => {
+          console.warn("WebP failed, trying PNG fallback");
+          const fallbackImg = new Image();
+          fallbackImg.onload = () => resolve(fallbackImg);
+          fallbackImg.onerror = reject;
+          fallbackImg.src = tryPng;
+        };
+        img.src = tryWebp;
+      })
+    ])
+      .then(([manifest, img]) => {
+        console.log(`✓ Atlas loaded: ${Object.keys(manifest.sprites).length} sprites`);
+        setAtlasManifest(manifest);
+        setAtlasImage(img);
+        
+        // Pre-pick sprite IDs for each bubble color
+        const pickedIds: Record<string, string> = {};
+        theme.bubbles.set.forEach(bubble => {
+          const tags = bubble.tags || [];
+          const spriteId = pickSpriteIdFromManifest(manifest, tags);
+          pickedIds[bubble.label] = spriteId;
+          console.log(`  ${bubble.label} → ${spriteId} (tags: ${tags.join(', ')})`);
+        });
+        
+        setAtlasSpriteIds(pickedIds);
+        setAtlasLoaded(true);
+      })
+      .catch(err => {
+        console.warn("Atlas loading failed, falling back to spritesheet/emoji:", err);
+        setAtlasLoaded(false);
+      });
   }, [theme]);
 
   // Preload spritesheet image
@@ -282,6 +342,38 @@ export const GameCanvas = ({
     });
   };
 
+  // Helper: Pick sprite ID from manifest based on tags (inline implementation)
+  const pickSpriteIdFromManifest = (manifest: any, tags: string[]): string => {
+    if (!tags || tags.length === 0) {
+      const keys = Object.keys(manifest.sprites);
+      return keys.length > 0 ? keys[0] : '';
+    }
+
+    const scores = new Map<string, number>();
+    for (const tag of tags) {
+      const spriteIds = manifest.tagIndex[tag.toLowerCase()] || [];
+      for (const id of spriteIds) {
+        scores.set(id, (scores.get(id) || 0) + 1);
+      }
+    }
+
+    let bestId = '';
+    let bestScore = -1;
+    for (const [id, score] of scores.entries()) {
+      if (score > bestScore) {
+        bestId = id;
+        bestScore = score;
+      }
+    }
+
+    if (!bestId) {
+      const keys = Object.keys(manifest.sprites);
+      bestId = keys.length > 0 ? keys[0] : '';
+    }
+
+    return bestId;
+  };
+
   // Main animation loop
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -357,8 +449,30 @@ export const GameCanvas = ({
       ctx.arc(bubble.x, bubble.y, BUBBLE_RADIUS * scale, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Draw icon from spritesheet or fallback to emoji
-      if (spritesheetLoaded && spritesheetImage) {
+      // Draw icon: Priority = atlas > spritesheet > emoji
+      if (atlasLoaded && atlasManifest && atlasImage && atlasSpriteIds[bubble.color]) {
+        // NEW: Use sprite atlas
+        const spriteId = atlasSpriteIds[bubble.color];
+        const sprite = atlasManifest.sprites[spriteId];
+        if (sprite) {
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          const atlasSize = dpr >= 2 ? 128 : 64;
+          const frame = sprite.frames[atlasSize];
+          
+          if (frame) {
+            const iconScale = (BUBBLE_RADIUS * 2 * scale * 0.7) / frame.w;
+            ctx.drawImage(
+              atlasImage,
+              frame.x, frame.y, frame.w, frame.h,
+              bubble.x - (frame.w * iconScale) / 2,
+              bubble.y - (frame.h * iconScale) / 2,
+              frame.w * iconScale,
+              frame.h * iconScale
+            );
+          }
+        }
+      }
+      else if (spritesheetLoaded && spritesheetImage) {
         // Calculate source position in spritesheet
         const hexColor = colorMap[bubble.color];
         const iconIndex = bubbleColors.indexOf(hexColor);

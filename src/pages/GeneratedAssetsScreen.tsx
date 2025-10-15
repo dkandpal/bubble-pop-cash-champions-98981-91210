@@ -130,8 +130,46 @@ export default function GeneratedAssetsScreen() {
             </div>
           </div>
 
-          {/* Bubble Spritesheet Preview */}
-          {theme.bubbles.spritesheet && (
+          {/* Atlas Mode Preview */}
+          {theme.bubbles.atlasMode && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                  Atlas Mode
+                </span>
+                Sprite Library
+              </h3>
+              <div className="p-4 border rounded-lg bg-muted/30">
+                <p className="text-xs text-muted-foreground mb-3">
+                  Using pre-built sprite library for fast, consistent visuals
+                </p>
+                <div className="grid grid-cols-6 gap-2">
+                  {theme.bubbles.set.map((bubble, i) => (
+                    <div key={i} className="flex flex-col items-center gap-1">
+                      <div
+                        className="w-12 h-12 rounded-full shadow-sm flex items-center justify-center text-lg border border-white/20"
+                        style={{ backgroundColor: bubble.hex }}
+                      >
+                        <span className="text-xs">{bubble.emoji}</span>
+                      </div>
+                      {bubble.tags && (
+                        <div className="flex flex-wrap gap-1 justify-center">
+                          {bubble.tags.slice(0, 2).map((tag, ti) => (
+                            <span key={ti} className="text-[9px] px-1 bg-primary/5 rounded">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Bubble Spritesheet Preview (Legacy) */}
+          {!theme.bubbles.atlasMode && theme.bubbles.spritesheet && (
             <div className="mb-6">
               <h3 className="text-sm font-medium mb-3">Bubble Icon Spritesheet</h3>
               <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/30">

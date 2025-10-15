@@ -292,7 +292,59 @@ Other rules:
       console.warn("Image generation error (non-blocking):", imageError);
     }
 
-    // Generate bubble spritesheet and upload to storage
+    // Add semantic tags for atlas-based sprite picking
+    // Available tags: ocean, space, food, nature, abstract, fantasy, tech,
+    //                 creature, plant, celestial, geometric, organic, 
+    //                 translucent, metallic, glowing, textured, simple
+    try {
+      console.log("Adding semantic tags for atlas sprite selection...");
+      parsedTheme.bubbles.set = parsedTheme.bubbles.set.map((bubble: any) => {
+        // Generate 2-4 semantic tags based on bubble label/prompt
+        const tagPrompt = `For this bubble game icon "${bubble.label}" (description: ${bubble.prompt || bubble.label}), 
+suggest 2-4 lowercase semantic tags from these categories:
+- Theme: ocean, space, food, nature, abstract, fantasy, tech
+- Visual: translucent, metallic, glowing, textured, simple
+- Type: creature, plant, celestial, geometric, organic
+
+Return ONLY a JSON array of tags, nothing else. Example: ["ocean", "creature", "translucent"]`;
+
+        // For now, assign basic tags based on common patterns (can be enhanced with AI later)
+        const tags: string[] = [];
+        const label = bubble.label.toLowerCase();
+        
+        // Theme detection
+        if (/(fish|shell|ocean|sea|water|jellyfish|crab|starfish)/i.test(label)) tags.push("ocean");
+        if (/(space|star|planet|rocket|alien|galaxy)/i.test(label)) tags.push("space");
+        if (/(fruit|food|apple|banana|orange|berry)/i.test(label)) tags.push("food");
+        if (/(flower|tree|leaf|plant|nature)/i.test(label)) tags.push("nature");
+        if (/(gem|crystal|orb|abstract|polygon)/i.test(label)) tags.push("abstract");
+        
+        // Type detection
+        if (/(fish|creature|animal|dragon|bird)/i.test(label)) tags.push("creature");
+        if (/(flower|plant|tree|leaf)/i.test(label)) tags.push("plant");
+        if (/(star|planet|celestial|moon|sun)/i.test(label)) tags.push("celestial");
+        if (/(circle|square|polygon|geometric)/i.test(label)) tags.push("geometric");
+        
+        // Visual detection
+        if (/(translucent|transparent|glass|jellyfish)/i.test(label)) tags.push("translucent");
+        if (/(metal|gold|silver|shiny)/i.test(label)) tags.push("metallic");
+        if (/(glow|bright|shine|star)/i.test(label)) tags.push("bright");
+        
+        // Ensure at least 2 tags
+        if (tags.length === 0) tags.push("abstract", "simple");
+        if (tags.length === 1) tags.push("simple");
+        
+        return { ...bubble, tags: tags.slice(0, 4) };
+      });
+      
+      // Enable atlas mode
+      parsedTheme.bubbles.atlasMode = true;
+      console.log("✓ Atlas mode enabled with semantic tags");
+    } catch (tagError) {
+      console.warn("Tag generation error (non-blocking):", tagError);
+    }
+
+    // Generate bubble spritesheet and upload to storage (LEGACY - kept as fallback)
     let bubbleSpritesheet: string | undefined;
     try {
       console.log("Generating bubble icon spritesheet...");
@@ -391,7 +443,7 @@ Example layout: If theme is "ocean", create: [jellyfish icon] [shell icon] [fish
       console.warn("Spritesheet generation error (non-blocking):", spritesheetError);
     }
 
-    // Add spritesheet URL to theme object
+    // Add spritesheet URL to theme object (fallback)
     if (bubbleSpritesheet) {
       parsedTheme.bubbles.spritesheet = bubbleSpritesheet;
     }

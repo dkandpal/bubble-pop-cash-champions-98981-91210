@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="shellGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFF7ED;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FED7AA;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <path d="M 64 30 Q 40 35 35 55 Q 32 75 50 88 Q 64 96 78 88 Q 96 75 93 55 Q 88 35 64 30 Z" 
+        fill="url(#shellGrad)" stroke="#F97316" stroke-width="2"/>
+  <path d="M 64 35 L 64 85 M 52 45 L 64 85 M 76 45 L 64 85 M 46 58 L 64 85 M 82 58 L 64 85" 
+        stroke="#FDBA74" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="64" cy="75" r="8" fill="#FFFFFF" opacity="0.9"/>
+  <circle cx="66" cy="73" r="3" fill="#F1F5F9" opacity="0.7"/>
+</svg>

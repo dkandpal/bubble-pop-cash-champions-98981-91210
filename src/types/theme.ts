@@ -2,6 +2,7 @@ export interface BubbleTheme {
   label: string;
   emoji: string;
   hex: string;
+  tags?: string[]; // For atlas-based sprite selection
 }
 
 export interface GameTheme {
@@ -10,7 +11,8 @@ export interface GameTheme {
   colors: string[];
   bubbles: {
     set: BubbleTheme[];
-    spritesheet?: string;
+    spritesheet?: string;  // Legacy AI-generated spritesheet URL
+    atlasMode?: boolean;   // Use pre-built sprite atlas instead
   };
   heroBannerImage?: string;
 }

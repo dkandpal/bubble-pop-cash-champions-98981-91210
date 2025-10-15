@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Loader2, Sparkles, Home } from "lucide-react";
+import { Loader2, Sparkles, Home, SkipForward } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { DEFAULT_THEME } from "@/types/theme";
 
 export default function ThemeGenerator() {
   const [prompt, setPrompt] = useState("");
@@ -57,6 +58,12 @@ export default function ThemeGenerator() {
     }
   };
 
+  const handleSkipToDefault = () => {
+    setTheme(DEFAULT_THEME);
+    toast.info("Using default theme");
+    navigate("/generated-assets");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-game flex flex-col relative">
       <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-6 relative z-10">
@@ -93,7 +100,7 @@ export default function ThemeGenerator() {
                   {isGenerating ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Generating theme and banner...
+                      Generating...
                     </>
                   ) : (
                     <>
@@ -101,6 +108,15 @@ export default function ThemeGenerator() {
                       Generate
                     </>
                   )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleSkipToDefault}
+                  disabled={isGenerating}
+                  className="min-w-[120px]"
+                >
+                  <SkipForward className="w-4 h-4 mr-2" />
+                  Skip This
                 </Button>
               </div>
             </div>

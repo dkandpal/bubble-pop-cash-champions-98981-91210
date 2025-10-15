@@ -43,7 +43,15 @@ const Index = () => {
         const response = await competitionService.submitEntry(stats, clientSessionId);
         
         if (response.state === 'waiting') {
-          navigate(`/compete/waiting/${response.match_id}`);
+          navigate(`/compete/waiting/${response.match_id}`, {
+            state: {
+              score: stats.score,
+              accuracy: stats.accuracy,
+              maxCombo: stats.maxCombo,
+              bubblesPopped: stats.bubblesPopped,
+              timeElapsed: stats.timeElapsed
+            }
+          });
         } else if (response.state === 'completed') {
           navigate(`/compete/results/${response.match_id}`);
         }

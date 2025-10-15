@@ -1,14 +1,24 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Home, PlayCircle } from "lucide-react";
+import { Loader2, Home, PlayCircle, CheckCircle2 } from "lucide-react";
 import { competitionService, MatchStatusResponse } from "@/services/CompetitionService";
 import { toast } from "sonner";
+
+interface SubmittedStats {
+  score: number;
+  accuracy: number;
+  maxCombo: number;
+  bubblesPopped: number;
+  timeElapsed: number;
+}
 
 export function WaitingScreen() {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const submittedStats = location.state as SubmittedStats | undefined;
   const [status, setStatus] = useState<MatchStatusResponse | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
@@ -114,51 +124,103 @@ export function WaitingScreen() {
     );
   }
 
+  const formatTimeElapsed = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
-      <Card className="max-w-md w-full p-8 text-center space-y-8">
-        <div className="space-y-4">
-          <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
-            <Loader2 className="w-10 h-10 animate-spin text-primary" />
-          </div>
-          
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold">Finding an Opponent...</h2>
-            <p className="text-muted-foreground">
-              Waiting for another player to complete their game
-            </p>
-          </div>
-        </div>
-
-        {timeLeft !== null && (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Time remaining</p>
-            <p className="text-3xl font-bold font-mono text-primary">
-              {formatTime(timeLeft)}
-            </p>
-          </div>
+      <div className="max-w-md w-full space-y-4">
+        {/* Entry Submitted - Score Display */}
+        {submittedStats && (
+          <Card className="p-6 text-center bg-primary/5 border-primary/20">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <CheckCircle2 className="w-6 h-6 text-primary" />
+              <h3 className="text-lg font-semibold">Entry Submitted!</h3>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Your Score</p>
+              <p className="text-4xl font-bold text-primary">
+                {submittedStats.score.toLocaleString()}
+              </p>
+            </div>
+          </Card>
         )}
 
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>Your score has been submitted</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
-            <span>Matching with players of similar skill</span>
-          </div>
-        </div>
+        {/* Stats Breakdown */}
+        {submittedStats && (
+          <Card className="p-6">
+            <h3 className="text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wide">
+              Your Performance
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Accuracy</p>
+                <p className="text-2xl font-bold">{submittedStats.accuracy.toFixed(0)}%</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Max Combo</p>
+                <p className="text-2xl font-bold">{submittedStats.maxCombo}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Bubbles Popped</p>
+                <p className="text-2xl font-bold">{submittedStats.bubblesPopped}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Time</p>
+                <p className="text-2xl font-bold">{formatTimeElapsed(submittedStats.timeElapsed)}</p>
+              </div>
+            </div>
+          </Card>
+        )}
 
-        <Button
-          onClick={() => navigate("/")}
-          variant="outline"
-          className="w-full"
-        >
-          <Home className="w-4 h-4 mr-2" />
-          Return Home
-        </Button>
-      </Card>
+        {/* Waiting Status */}
+        <Card className="p-8 text-center space-y-6">
+          <div className="space-y-4">
+            <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+              <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            </div>
+            
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">Finding an Opponent...</h2>
+              <p className="text-muted-foreground">
+                Looking for a worthy opponent to challenge
+              </p>
+            </div>
+          </div>
+
+          {timeLeft !== null && (
+            <div className="space-y-2 py-4 border-y">
+              <p className="text-sm text-muted-foreground">Match expires in</p>
+              <p className="text-3xl font-bold font-mono text-primary">
+                {formatTime(timeLeft)}
+              </p>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span>Entry recorded on server</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span>Searching for opponent...</span>
+            </div>
+          </div>
+
+          <Button
+            onClick={() => navigate("/")}
+            variant="outline"
+            className="w-full"
+          >
+            <Home className="w-4 h-4 mr-2" />
+            Return Home
+          </Button>
+        </Card>
+      </div>
     </div>
   );
 }

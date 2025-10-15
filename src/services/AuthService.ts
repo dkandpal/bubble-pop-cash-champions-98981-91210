@@ -41,6 +41,23 @@ class AuthService {
   }
 
   /**
+   * Sign in as guest with demo credentials
+   */
+  async signInAsGuest() {
+    // Use a pre-configured demo account
+    const demoEmail = 'demo@bubbleshooter.app';
+    const demoPassword = 'demo123456';
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: demoEmail,
+      password: demoPassword,
+    });
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
    * Sign out the current user
    */
   async signOut() {

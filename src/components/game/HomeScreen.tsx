@@ -11,7 +11,7 @@ export const HomeScreen = ({
   onPlayClick
 }: HomeScreenProps) => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, signInAsGuest } = useAuth();
 
   const displayName = user?.user_metadata?.full_name || 
                      user?.user_metadata?.display_name || 
@@ -23,8 +23,8 @@ export const HomeScreen = ({
   };
 
   return <div className="min-h-screen bg-gradient-sky flex flex-col items-center justify-center p-6 relative">
-      {/* User Profile Section */}
-      {user ? (
+      {/* User Profile Section - Only show when authenticated */}
+      {user && (
         <div className="absolute top-4 right-4 flex items-center gap-3 bg-background/80 backdrop-blur-sm rounded-full px-4 py-2 border border-border/50">
           <Avatar className="w-8 h-8">
             {user.user_metadata?.avatar_url && (
@@ -42,16 +42,6 @@ export const HomeScreen = ({
             </button>
           </div>
         </div>
-      ) : (
-        <Button 
-          variant="outline"
-          size="sm"
-          onClick={() => navigate("/auth")}
-          className="absolute top-4 right-4"
-        >
-          <LogIn className="w-4 h-4 mr-2" />
-          Sign In
-        </Button>
       )}
 
       <div className="max-w-md w-full space-y-4 text-center">
@@ -68,36 +58,63 @@ export const HomeScreen = ({
           <img src={gamePreview} alt="Bubble Pop Cash game preview showing colorful bubble grid" className="w-full max-w-sm mx-auto rounded-2xl shadow-lg" />
         </div>
 
-        {/* CTA Buttons */}
+        {/* CTA Buttons - Different based on auth state */}
         <div className="space-y-3">
-          <Button 
-            size="lg" 
-            onClick={() => navigate("/theme-generator")} 
-            className="w-full h-16 text-xl font-bold bg-gradient-button hover:opacity-90 transition-all shadow-glow animate-pulse-glow"
-          >
-            <Sparkles className="w-6 h-6 mr-2" />
-            Build with AI
-          </Button>
+          {user ? (
+            // Authenticated state - show all features
+            <>
+              <Button 
+                size="lg" 
+                onClick={() => navigate("/theme-generator")} 
+                className="w-full h-16 text-xl font-bold bg-gradient-button hover:opacity-90 transition-all shadow-glow animate-pulse-glow"
+              >
+                <Sparkles className="w-6 h-6 mr-2" />
+                Build with AI
+              </Button>
 
-          <Button 
-            size="lg" 
-            variant="outline" 
-            onClick={() => navigate("/browse")} 
-            className="w-full h-12 text-lg font-semibold"
-          >
-            <Users className="w-5 h-5 mr-2" />
-            Browse Game Library
-          </Button>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                onClick={() => navigate("/browse")} 
+                className="w-full h-12 text-lg font-semibold"
+              >
+                <Users className="w-5 h-5 mr-2" />
+                Browse Game Library
+              </Button>
 
-          <Button 
-            size="lg" 
-            variant="outline" 
-            onClick={() => navigate("/my-games")} 
-            className="w-full h-12 text-lg font-semibold"
-          >
-            <Gamepad2 className="w-5 h-5 mr-2" />
-            My Games
-          </Button>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                onClick={() => navigate("/my-games")} 
+                className="w-full h-12 text-lg font-semibold"
+              >
+                <Gamepad2 className="w-5 h-5 mr-2" />
+                My Games
+              </Button>
+            </>
+          ) : (
+            // Unauthenticated state - show sign in and demo
+            <>
+              <Button 
+                size="lg" 
+                onClick={() => navigate("/auth")} 
+                className="w-full h-16 text-xl font-bold bg-gradient-button hover:opacity-90 transition-all shadow-glow"
+              >
+                <LogIn className="w-6 h-6 mr-2" />
+                SIGN IN
+              </Button>
+
+              <Button 
+                size="lg" 
+                variant="outline" 
+                onClick={signInAsGuest}
+                className="w-full h-12 text-lg font-semibold"
+              >
+                <Gamepad2 className="w-5 h-5 mr-2" />
+                DEMO
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>;

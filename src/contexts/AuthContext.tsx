@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithMagicLink: (email: string) => Promise<void>;
+  signInAsGuest: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -62,6 +63,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signInAsGuest = async () => {
+    try {
+      await authService.signInAsGuest();
+      toast.success('Signed in as guest!');
+    } catch (error) {
+      console.error('Guest sign in error:', error);
+      toast.error('Failed to sign in as guest');
+      throw error;
+    }
+  };
+
   const signOut = async () => {
     try {
       await authService.signOut();
@@ -81,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         signInWithGoogle,
         signInWithMagicLink,
+        signInAsGuest,
         signOut,
       }}
     >

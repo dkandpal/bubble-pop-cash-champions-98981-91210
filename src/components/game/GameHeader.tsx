@@ -55,6 +55,8 @@ export const GameHeader = ({ score, timeRemaining, maxCombo, theme, bubblesPoppe
           console.log("ℹ️ Atlas unavailable in GameHeader:", err.message);
           setAtlasData(null);
         });
+    } else {
+      setAtlasData(null);
     }
   }, [theme.bubbles.atlasMode]);
 

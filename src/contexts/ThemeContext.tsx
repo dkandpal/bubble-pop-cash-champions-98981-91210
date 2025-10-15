@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode, useMemo } from 'react';
 import { GameTheme, DEFAULT_THEME } from '@/types/theme';
 
 interface ThemeContextType {
@@ -25,8 +25,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('game-theme');
   };
 
+  const value = useMemo(
+    () => ({ theme, setTheme, resetTheme }),
+    [theme]
+  );
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, resetTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

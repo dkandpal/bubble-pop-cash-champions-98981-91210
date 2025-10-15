@@ -174,7 +174,7 @@ export const GameCanvas = ({
         setAtlasImage(null);
         setAtlasManifest(null);
       });
-  }, [theme]);
+  }, [theme.bubbles.atlasMode]);
 
   // Preload spritesheet image
   useEffect(() => {

@@ -167,15 +167,16 @@ serve(async (req) => {
         .in('id', [newEntry.id, opponentEntry.id]);
 
       // Determine winner
+      // Note: entry_a = opponentEntry (first player), entry_b = newEntry (second player)
       let winner_entry_id = null;
       let outcome = 'tie';
       
       if (newEntry.score > opponentEntry.score) {
         winner_entry_id = newEntry.id;
-        outcome = 'a_won';
+        outcome = 'b_won'; // newEntry is entry_b
       } else if (opponentEntry.score > newEntry.score) {
         winner_entry_id = opponentEntry.id;
-        outcome = 'b_won';
+        outcome = 'a_won'; // opponentEntry is entry_a
       }
 
       // Create match results

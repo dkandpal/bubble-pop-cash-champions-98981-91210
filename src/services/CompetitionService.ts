@@ -133,11 +133,8 @@ export class CompetitionService {
    * Get player's match history
    */
   async getPlayerHistory(filters: HistoryFilters = {}): Promise<MatchHistoryItem[]> {
-    const playerId = await this.ensurePlayerRecord();
-
     const { data, error } = await supabase.functions.invoke("get-player-history", {
       body: {
-        player_id: playerId,
         game_key: filters.game_key,
         limit: filters.limit || 50,
         cursor: filters.cursor
@@ -146,6 +143,10 @@ export class CompetitionService {
 
     if (error) throw error;
     return data.history || [];
+  }
+  
+  get supabase() {
+    return supabase;
   }
 }
 

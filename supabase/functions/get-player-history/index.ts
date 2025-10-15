@@ -12,20 +12,41 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    );
-
-    const body = await req.json();
-    const { player_id, game_key, limit = 50 } = body;
-
-    if (!player_id) {
-      throw new Error('Missing player_id');
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
     }
 
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      throw new Error('Unauthorized');
+    }
+
+    // Get player_id from user
+    const { data: player } = await supabaseClient
+      .from('players')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!player) {
+      throw new Error('Player not found');
+    }
+
+    const player_id = player.id;
+
+    const body = await req.json();
+    const { game_key, limit = 50 } = body;
+
     // Build query
-    let query = supabase
+    let query = supabaseClient
       .from('entries')
       .select(`
         id,
@@ -56,13 +77,13 @@ serve(async (req) => {
     const history = await Promise.all(
       entries.map(async (entry: any) => {
         // Get game title
-        const { data: game } = await supabase
+        const { data: game } = await supabaseClient
           .from('games')
           .select('title')
           .eq('game_key', entry.game_key)
           .single();
 
-        const { data: result } = await supabase
+        const { data: result } = await supabaseClient
           .from('match_results')
           .select(`
             *,

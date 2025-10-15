@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Home, PlayCircle, Trophy, Clock, Target, Zap, History } from "lucide-react";
 import { competitionService, MatchResults } from "@/services/CompetitionService";
+import { supabase } from "@/integrations/supabase/client";
 import { Confetti } from "@/components/game/Confetti";
 import { toast } from "sonner";
 
@@ -33,9 +34,17 @@ export function CompetitiveResultsScreen() {
 
         setResults(response.results);
         
-        // Determine which entry is mine based on player_id
-        // This is a simplified version - in production you'd check against current user
-        setMyEntryId(response.results.entry_b_id);
+        // Determine which entry is mine by getting my player_id
+        const myPlayerId = await competitionService.ensurePlayerRecord();
+        
+        // Fetch both entries to find which one belongs to me
+        const { data: entries } = await competitionService['supabase']
+          .from('entries')
+          .select('id, player_id')
+          .in('id', [response.results.entry_a_id, response.results.entry_b_id]);
+        
+        const myEntry = entries?.find(e => e.player_id === myPlayerId);
+        setMyEntryId(myEntry?.id || response.results.entry_b_id);
       } catch (error) {
         console.error("Failed to fetch results:", error);
         toast.error("Failed to load match results");

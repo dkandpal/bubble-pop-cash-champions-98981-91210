@@ -227,10 +227,10 @@ serve(async (req) => {
 
     if (openMatchError) throw openMatchError;
 
-    // Update entry with match_id
+    // Update entry with match_id but keep status as 'pending' - still waiting for opponent
     await supabase
       .from('entries')
-      .update({ match_id: openMatch.id, status: 'committed' })
+      .update({ match_id: openMatch.id, status: 'pending' })
       .eq('id', newEntry.id);
 
     return new Response(JSON.stringify({

@@ -3,6 +3,9 @@ project_id = "icijjxdzgmjgdvnmnqdq"
 [functions.submit-entry]
 verify_jwt = true
 
+[functions.get-entry-status]
+verify_jwt = true
+
 [functions.get-match-status]
 verify_jwt = true
 

@@ -43,7 +43,7 @@ const Index = () => {
         const response = await competitionService.submitEntry(stats, clientSessionId);
         
         if (response.state === 'waiting') {
-          navigate(`/compete/waiting/${response.match_id}`, {
+          navigate(`/compete/waiting/${response.entry_id}`, {
             state: {
               score: stats.score,
               accuracy: stats.accuracy,

@@ -15,7 +15,7 @@ interface SubmittedStats {
 }
 
 export function WaitingScreen() {
-  const { matchId } = useParams<{ matchId: string }>();
+  const { matchId: entryId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const submittedStats = location.state as SubmittedStats | undefined;
@@ -24,7 +24,7 @@ export function WaitingScreen() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!matchId) {
+    if (!entryId) {
       navigate("/");
       return;
     }
@@ -33,22 +33,22 @@ export function WaitingScreen() {
     
     const pollStatus = async () => {
       try {
-        const response = await competitionService.getMatchStatus(matchId);
+        const response = await competitionService.getEntryStatus(entryId);
         setStatus(response);
         setError(null);
 
-        if (response.state === "completed" && response.results) {
+        if (response.state === "completed" && response.match_id) {
           clearInterval(interval);
           toast.success("Match found! Loading results...");
           setTimeout(() => {
-            navigate(`/compete/results/${matchId}`);
+            navigate(`/compete/results/${response.match_id}`);
           }, 1000);
         } else if (response.state === "canceled") {
           clearInterval(interval);
           toast.error("No opponent found - match expired");
         }
       } catch (error) {
-        console.error("Failed to fetch match status:", error);
+        console.error("Failed to fetch entry status:", error);
         setError("Failed to check match status. Retrying...");
       }
     };
@@ -60,7 +60,7 @@ export function WaitingScreen() {
     interval = setInterval(pollStatus, 3000);
 
     return () => clearInterval(interval);
-  }, [matchId, navigate]);
+  }, [entryId, navigate]);
 
   // Calculate time remaining
   useEffect(() => {

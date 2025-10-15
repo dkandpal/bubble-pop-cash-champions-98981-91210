@@ -4,7 +4,8 @@ import { GameConfig } from "@/config/gameConfig";
 
 export interface MatchResponse {
   state: "waiting" | "completed";
-  match_id: string;
+  match_id?: string;
+  entry_id?: string;
   results?: MatchResults;
 }
 
@@ -23,6 +24,7 @@ export interface MatchResults {
 export interface MatchStatusResponse {
   state: "open" | "completed" | "canceled";
   expires_at?: string;
+  match_id?: string;
   results?: MatchResults;
 }
 
@@ -97,6 +99,18 @@ export class CompetitionService {
           build: new Date().toISOString()
         }
       }
+    });
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
+   * Get current status of an entry (for first player waiting)
+   */
+  async getEntryStatus(entryId: string): Promise<MatchStatusResponse & { entry_id?: string }> {
+    const { data, error } = await supabase.functions.invoke("get-entry-status", {
+      body: { entry_id: entryId }
     });
 
     if (error) throw error;

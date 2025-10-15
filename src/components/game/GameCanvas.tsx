@@ -434,6 +434,17 @@ export const GameCanvas = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Don't start rendering until we have valid sprite sources ready
+    const hasValidSpriteSource = atlasLoaded || spritesheetLoaded;
+    if (theme.bubbles.atlasMode && !hasValidSpriteSource) {
+      console.log('⏸️ [ANIMATION] Waiting for assets to load before starting...', {
+        atlasLoaded,
+        spritesheetLoaded,
+        timestamp: performance.now()
+      });
+      return; // Wait for assets to be ready
+    }
+
     const drawBubble = (
       ctx: CanvasRenderingContext2D, 
       bubble: Bubble, 
@@ -777,6 +788,14 @@ export const GameCanvas = ({
         });
         firstFrameLoggedRef.current = true;
       }
+      
+      // Safety check: Skip rendering if assets aren't ready yet (shouldn't happen with useEffect guard)
+      const canRenderBubbles = atlasLoaded || spritesheetLoaded;
+      if (theme.bubbles.atlasMode && !canRenderBubbles) {
+        console.warn('⚠️ [ANIMATION] Frame skipped - assets not ready');
+        requestAnimationFrame(animate);
+        return;
+      }
 
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -1016,7 +1035,7 @@ export const GameCanvas = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [gameState, shootingBubble, aimAngle, isAiming, poppingBubbles, fallingBubbles, onBubbleLanded]);
+  }, [gameState, shootingBubble, aimAngle, isAiming, poppingBubbles, fallingBubbles, onBubbleLanded, atlasLoaded, spritesheetLoaded, theme.bubbles.atlasMode]);
 
   // Expose methods to parent component
   useEffect(() => {

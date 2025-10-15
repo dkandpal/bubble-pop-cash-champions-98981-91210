@@ -90,7 +90,7 @@ export function WaitingScreen() {
     );
   }
 
-  if (status.state === "canceled") {
+  if (status?.state === "canceled") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
         <Card className="max-w-md w-full p-8 text-center space-y-6">
@@ -204,7 +204,7 @@ export function WaitingScreen() {
             </div>
           </div>
 
-          {timeLeft !== null && (
+          {status?.expires_at && timeLeft !== null && (
             <div className="space-y-2 py-4 border-y">
               <p className="text-sm text-muted-foreground">Match expires in</p>
               <p className="text-3xl font-bold font-mono text-primary">

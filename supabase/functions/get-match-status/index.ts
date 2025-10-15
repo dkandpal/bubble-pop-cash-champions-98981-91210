@@ -56,6 +56,17 @@ serve(async (req) => {
 
       if (resultsError) throw resultsError;
 
+      if (!results) {
+        // Match is completed but results not yet created (rare race condition)
+        console.log('Match completed but no results found yet');
+        return new Response(JSON.stringify({
+          state: match.state,
+          expires_at: match.expires_at
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       return new Response(JSON.stringify({
         state: 'completed',
         results: {

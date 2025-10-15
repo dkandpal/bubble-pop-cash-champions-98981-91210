@@ -337,9 +337,11 @@ Return ONLY a JSON array of tags, nothing else. Example: ["ocean", "creature", "
         return { ...bubble, tags: tags.slice(0, 4) };
       });
       
-      // Enable atlas mode
-      parsedTheme.bubbles.atlasMode = true;
-      console.log("✓ Atlas mode enabled with semantic tags");
+      // Enable atlas mode ONLY if atlas files exist
+      // TODO: Remove this check once atlas is built
+      // For now, keep atlasMode disabled to use spritesheet fallback
+      parsedTheme.bubbles.atlasMode = false; // Set to true after running: npm run build:atlas
+      console.log("✓ Semantic tags added (atlas mode disabled - run build:atlas to enable)");
     } catch (tagError) {
       console.warn("Tag generation error (non-blocking):", tagError);
     }

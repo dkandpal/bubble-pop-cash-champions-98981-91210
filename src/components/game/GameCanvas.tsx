@@ -144,12 +144,14 @@ export const GameCanvas = ({
         setAtlasManifest(manifest);
         setAtlasImage(img);
         
-        // Pre-pick sprite IDs for each bubble color
+        // Pre-pick sprite IDs for each bubble color/label
         const pickedIds: Record<string, string> = {};
         theme.bubbles.set.forEach(bubble => {
           const tags = bubble.tags || [];
           const spriteId = pickSpriteIdFromManifest(manifest, tags);
+          // Store by BOTH label and hex for flexible lookup
           pickedIds[bubble.label] = spriteId;
+          pickedIds[bubble.hex] = spriteId;
           console.log(`  ${bubble.label} → ${spriteId} (tags: ${tags.join(', ')})`);
         });
         

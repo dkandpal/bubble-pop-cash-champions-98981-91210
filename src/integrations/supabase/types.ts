@@ -14,6 +14,227 @@ export type Database = {
   }
   public: {
     Tables: {
+      entries: {
+        Row: {
+          accuracy: number | null
+          bubbles_popped: number | null
+          client_session_id: string
+          duration_ms: number
+          game_key: string
+          id: string
+          match_id: string | null
+          max_combo: number | null
+          metadata: Json | null
+          player_id: string
+          rules_version: string
+          score: number
+          status: string
+          submitted_at: string
+        }
+        Insert: {
+          accuracy?: number | null
+          bubbles_popped?: number | null
+          client_session_id: string
+          duration_ms: number
+          game_key: string
+          id?: string
+          match_id?: string | null
+          max_combo?: number | null
+          metadata?: Json | null
+          player_id: string
+          rules_version: string
+          score: number
+          status: string
+          submitted_at?: string
+        }
+        Update: {
+          accuracy?: number | null
+          bubbles_popped?: number | null
+          client_session_id?: string
+          duration_ms?: number
+          game_key?: string
+          id?: string
+          match_id?: string | null
+          max_combo?: number | null
+          metadata?: Json | null
+          player_id?: string
+          rules_version?: string
+          score?: number
+          status?: string
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entries_game_key_rules_version_fkey"
+            columns: ["game_key", "rules_version"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["game_key", "rules_version"]
+          },
+          {
+            foreignKeyName: "entries_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entries_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      games: {
+        Row: {
+          created_at: string
+          description: string | null
+          game_key: string
+          rules_version: string
+          settings: Json
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          game_key: string
+          rules_version: string
+          settings: Json
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          game_key?: string
+          rules_version?: string
+          settings?: Json
+          title?: string
+        }
+        Relationships: []
+      }
+      match_results: {
+        Row: {
+          created_at: string
+          entry_a_id: string
+          entry_b_id: string
+          match_id: string
+          outcome: string
+          score_a: number
+          score_b: number
+          winner_entry_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entry_a_id: string
+          entry_b_id: string
+          match_id: string
+          outcome: string
+          score_a: number
+          score_b: number
+          winner_entry_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entry_a_id?: string
+          entry_b_id?: string
+          match_id?: string
+          outcome?: string
+          score_a?: number
+          score_b?: number
+          winner_entry_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_results_entry_a_id_fkey"
+            columns: ["entry_a_id"]
+            isOneToOne: false
+            referencedRelation: "entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_results_entry_b_id_fkey"
+            columns: ["entry_b_id"]
+            isOneToOne: false
+            referencedRelation: "entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_results_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: true
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_results_winner_entry_id_fkey"
+            columns: ["winner_entry_id"]
+            isOneToOne: false
+            referencedRelation: "entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          expires_at: string | null
+          game_key: string
+          id: string
+          rules_version: string
+          state: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          game_key: string
+          id?: string
+          rules_version: string
+          state: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          game_key?: string
+          id?: string
+          rules_version?: string
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_game_key_rules_version_fkey"
+            columns: ["game_key", "rules_version"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["game_key", "rules_version"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          created_at: string
+          handle: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          handle?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          handle?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       public_games: {
         Row: {
           created_at: string

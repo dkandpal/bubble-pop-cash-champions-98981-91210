@@ -12,7 +12,10 @@ import Auth from "./pages/Auth";
 import MyGames from "./pages/MyGames";
 import PlayGame from "./pages/PlayGame";
 import Browse from "./pages/Browse";
+import MatchHistory from "./pages/MatchHistory";
 import NotFound from "./pages/NotFound";
+import { WaitingScreen } from "./components/competitive/WaitingScreen";
+import { CompetitiveResultsScreen } from "./components/competitive/CompetitiveResultsScreen";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +35,9 @@ const App = () => (
               <Route path="/my-games" element={<MyGames />} />
               <Route path="/play/:id" element={<PlayGame />} />
               <Route path="/browse" element={<Browse />} />
+              <Route path="/match-history" element={<MatchHistory />} />
+              <Route path="/compete/waiting/:matchId" element={<WaitingScreen />} />
+              <Route path="/compete/results/:matchId" element={<CompetitiveResultsScreen />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

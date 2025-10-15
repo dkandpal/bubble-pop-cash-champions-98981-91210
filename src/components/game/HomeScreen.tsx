@@ -1,14 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Sparkles, Users, LogIn, Gamepad2 } from "lucide-react";
+import { Sparkles, Users, LogIn, Gamepad2, Swords } from "lucide-react";
 import gamePreview from "@/assets/game-preview.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 interface HomeScreenProps {
   onPlayClick: () => void;
+  onCompeteClick?: () => void;
 }
 export const HomeScreen = ({
-  onPlayClick
+  onPlayClick,
+  onCompeteClick
 }: HomeScreenProps) => {
   const navigate = useNavigate();
   const { user, signOut, signInAsGuest } = useAuth();
@@ -70,6 +72,15 @@ export const HomeScreen = ({
               >
                 <Sparkles className="w-6 h-6 mr-2" />
                 Build with AI
+              </Button>
+
+              <Button 
+                size="lg" 
+                onClick={onCompeteClick || onPlayClick}
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90"
+              >
+                <Swords className="w-5 h-5 mr-2" />
+                Compete 1v1
               </Button>
 
               <Button 

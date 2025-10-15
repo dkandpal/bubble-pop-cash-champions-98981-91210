@@ -1,1 +1,13 @@
 project_id = "icijjxdzgmjgdvnmnqdq"
+
+[functions.submit-entry]
+verify_jwt = true
+
+[functions.get-match-status]
+verify_jwt = true
+
+[functions.get-player-history]
+verify_jwt = true
+
+[functions.expire-open-matches]
+verify_jwt = false

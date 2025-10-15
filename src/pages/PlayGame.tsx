@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { storageAdapter, GameWithCreator } from "@/services/StorageAdapter";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -8,15 +8,20 @@ import { ResultsScreen } from "@/components/game/ResultsScreen";
 import { PublishedGameHome } from "@/components/game/PublishedGameHome";
 import { GameStats } from "@/types/game";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { competitionService } from "@/services/CompetitionService";
 
 export default function PlayGame() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { setTheme } = useTheme();
+  const { user } = useAuth();
   const [game, setGame] = useState<GameWithCreator | null>(null);
   const [loading, setLoading] = useState(true);
   const [gameState, setGameState] = useState<"home" | "playing" | "results">("home");
   const [stats, setStats] = useState<GameStats | null>(null);
+  const isCompetitive = searchParams.get("mode") === "compete";
 
   useEffect(() => {
     if (id) {
@@ -42,9 +47,35 @@ export default function PlayGame() {
     }
   };
 
-  const handleGameEnd = (gameStats: GameStats) => {
+  const handleGameEnd = async (gameStats: GameStats) => {
     setStats(gameStats);
-    setGameState("results");
+    
+    if (isCompetitive && user) {
+      try {
+        const clientSessionId = crypto.randomUUID();
+        const response = await competitionService.submitEntry(gameStats, clientSessionId);
+        
+        if (response.state === 'waiting') {
+          navigate(`/compete/waiting/${response.entry_id}`, {
+            state: {
+              score: gameStats.score,
+              accuracy: gameStats.accuracy,
+              maxCombo: gameStats.maxCombo,
+              bubblesPopped: gameStats.bubblesPopped,
+              timeElapsed: gameStats.timeElapsed
+            }
+          });
+        } else if (response.state === 'completed') {
+          navigate(`/compete/results/${response.match_id}`);
+        }
+      } catch (error) {
+        console.error("Failed to submit competitive entry:", error);
+        toast.error("Failed to submit score");
+        setGameState("results");
+      }
+    } else {
+      setGameState("results");
+    }
   };
 
   if (loading) {

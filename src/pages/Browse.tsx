@@ -127,12 +127,21 @@ export default function Browse() {
                         ))}
                       </div>
                     )}
-                    <Button
-                      className="w-full mt-4"
-                      onClick={() => navigate(`/play/${game.id}`)}
-                    >
-                      Play Now
-                    </Button>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => navigate(`/play/${game.id}?mode=practice`)}
+                      >
+                        Practice
+                      </Button>
+                      <Button
+                        className="flex-1"
+                        onClick={() => navigate(`/play/${game.id}?mode=compete`)}
+                      >
+                        Compete 1v1
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

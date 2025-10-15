@@ -85,11 +85,7 @@ serve(async (req) => {
 
         const { data: result } = await supabaseClient
           .from('match_results')
-          .select(`
-            *,
-            entry_a:entries!match_results_entry_a_id_fkey(player:players(handle), score),
-            entry_b:entries!match_results_entry_b_id_fkey(player:players(handle), score)
-          `)
+          .select('*')
           .eq('match_id', entry.match_id)
           .single();
 
@@ -99,7 +95,26 @@ serve(async (req) => {
         const isEntryA = result.entry_a_id === entry.id;
         const yourScore = isEntryA ? result.score_a : result.score_b;
         const opponentScore = isEntryA ? result.score_b : result.score_a;
-        const opponentHandle = isEntryA ? result.entry_b?.player?.handle : result.entry_a?.player?.handle;
+        const opponentEntryId = isEntryA ? result.entry_b_id : result.entry_a_id;
+
+        // Get opponent's entry to find their player_id
+        const { data: opponentEntry } = await supabaseClient
+          .from('entries')
+          .select('player_id')
+          .eq('id', opponentEntryId)
+          .single();
+
+        // Get opponent's handle from players table
+        let opponentHandle = 'Anonymous Player';
+        if (opponentEntry?.player_id) {
+          const { data: opponentPlayer } = await supabaseClient
+            .from('players')
+            .select('handle')
+            .eq('id', opponentEntry.player_id)
+            .single();
+          
+          opponentHandle = opponentPlayer?.handle || 'Anonymous Player';
+        }
 
         let outcome: 'win' | 'loss' | 'tie' | 'canceled';
         if (result.outcome === 'canceled') {

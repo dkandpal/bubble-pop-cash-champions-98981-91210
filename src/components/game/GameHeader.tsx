@@ -2,7 +2,7 @@ import { Clock, Star } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useSound } from "@/hooks/useSound";
 import { GameTheme } from "@/types/theme";
-import { useBubbleAssets } from "./hooks/useBubbleAssets";
+import { useBubbleAssetsContext } from "@/contexts/BubbleAssetsContext";
 
 interface GameHeaderProps {
   score: number;
@@ -21,7 +21,7 @@ export const GameHeader = ({ score, timeRemaining, maxCombo, theme, bubblesPoppe
   const INITIAL_TIME = 120;
   
   const canvasRefs = useRef<{ [key: string]: HTMLCanvasElement | null }>({});
-  const assets = useBubbleAssets(theme);
+  const assets = useBubbleAssetsContext();
 
   useEffect(() => {
     if (timeRemaining < 10 && timeRemaining !== prevTimeRef.current) {

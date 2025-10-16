@@ -16,8 +16,15 @@ export interface BubbleAssets {
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.decoding = "async";
-    img.onload = () => resolve(img);
+    img.crossOrigin = "anonymous";
+    img.onload = async () => {
+      try {
+        await img.decode(); // Wait for decoding to complete
+        resolve(img);
+      } catch (error) {
+        reject(error);
+      }
+    };
     img.onerror = reject;
     img.src = src;
   });

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { GameState, Bubble, BubbleColor } from "@/types/game";
 import { GameTheme } from "@/types/theme";
-import { useBubbleAssets } from "./hooks/useBubbleAssets";
+import { useBubbleAssetsContext } from "@/contexts/BubbleAssetsContext";
 import { snapToGrid, checkCollision, checkCollisionAlongPath, isValidGridPosition, FAIL_LINE_Y } from "@/utils/gameLogic";
 
 interface GameCanvasProps {
@@ -63,8 +63,8 @@ export const GameCanvas = ({
   const firstFrameLoggedRef = useRef(false);
   const debugModeRef = useRef(false);
   
-  // Centralized asset loading
-  const assets = useBubbleAssets(theme);
+  // Use shared asset context
+  const assets = useBubbleAssetsContext();
 
   const CANVAS_WIDTH = 450;
   const CANVAS_HEIGHT = 600;
@@ -394,7 +394,7 @@ export const GameCanvas = ({
       ctx.stroke();
 
       // Draw icon: Priority = atlas > spritesheet > emoji
-      if (assets.mode === "atlas" && assets.atlasManifest && assets.atlasImage) {
+      if (assets.mode === "atlas" && assets.atlasManifest && assets.atlasImage?.complete) {
         const spriteId = assets.atlasSpriteIds[bubble.color];
         if (spriteId) {
           const sprite = assets.atlasManifest.sprites[spriteId];
@@ -417,7 +417,7 @@ export const GameCanvas = ({
           }
         }
       }
-      else if (assets.mode === "sheet" && assets.spritesheetImage) {
+      else if (assets.mode === "sheet" && assets.spritesheetImage?.complete) {
         // Calculate source position in spritesheet
         const hexColor = colorMap[bubble.color];
         const iconIndex = bubbleColors.indexOf(hexColor);

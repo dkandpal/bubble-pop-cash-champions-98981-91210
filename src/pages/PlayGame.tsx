@@ -10,6 +10,7 @@ import { GameStats } from "@/types/game";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { competitionService } from "@/services/CompetitionService";
+import { BubbleAssetsProvider } from "@/contexts/BubbleAssetsContext";
 
 export default function PlayGame() {
   const { id } = useParams<{ id: string }>();
@@ -100,7 +101,7 @@ export default function PlayGame() {
   }
 
   return (
-    <>
+    <BubbleAssetsProvider>
       {gameState === "home" ? (
         <PublishedGameHome
           game={game}
@@ -120,6 +121,6 @@ export default function PlayGame() {
           onHome={() => setGameState("home")}
         />
       ) : null}
-    </>
+    </BubbleAssetsProvider>
   );
 }

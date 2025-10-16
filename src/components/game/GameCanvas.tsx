@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { GameState, Bubble, BubbleColor } from "@/types/game";
 import { GameTheme } from "@/types/theme";
+import { useBubbleAssets } from "./hooks/useBubbleAssets";
 import { snapToGrid, checkCollision, checkCollisionAlongPath, isValidGridPosition, FAIL_LINE_Y } from "@/utils/gameLogic";
 
 interface GameCanvasProps {
@@ -60,14 +61,10 @@ export const GameCanvas = ({
   const aimLineOpacityRef = useRef(0);
   const lastFrameTimeRef = useRef(performance.now());
   const firstFrameLoggedRef = useRef(false);
-  const [spritesheetImage, setSpritesheetImage] = useState<HTMLImageElement | null>(null);
-  const [spritesheetLoaded, setSpritesheetLoaded] = useState(false);
+  const debugModeRef = useRef(false);
   
-  // Atlas system state
-  const [atlasImage, setAtlasImage] = useState<HTMLImageElement | null>(null);
-  const [atlasManifest, setAtlasManifest] = useState<any>(null);
-  const [atlasLoaded, setAtlasLoaded] = useState(false);
-  const [atlasSpriteIds, setAtlasSpriteIds] = useState<Record<string, string>>({});
+  // Centralized asset loading
+  const assets = useBubbleAssets(theme);
 
   const CANVAS_WIDTH = 450;
   const CANVAS_HEIGHT = 600;
@@ -104,137 +101,17 @@ export const GameCanvas = ({
     });
   }, [theme]);
 
-  // Load sprite atlas if enabled
+  // Debug toggle (press 'D' key)
   useEffect(() => {
-    console.log('🔄 [ATLAS EFFECT] Starting...', {
-      atlasMode: theme.bubbles.atlasMode,
-      timestamp: performance.now()
-    });
-    
-    if (!theme.bubbles.atlasMode) {
-      console.log('⏭️ [ATLAS EFFECT] Atlas mode disabled, skipping');
-      setAtlasLoaded(false);
-      setAtlasImage(null);
-      setAtlasManifest(null);
-      setAtlasSpriteIds({});
-      return;
-    }
-
-    // Check if atlas files exist before attempting full load
-    fetch("/sprites/atlas.json", { method: "HEAD" })
-      .then(res => {
-        const contentType = res.headers.get('Content-Type');
-        if (!res.ok || !contentType?.includes('application/json')) {
-          // Atlas doesn't exist - this is OK, use spritesheet fallback
-          console.log("⏭️ [ATLAS EFFECT] Atlas files not found (expected if not yet generated). Using spritesheet fallback.", {
-            timestamp: performance.now(),
-            atlasLoaded: false
-          });
-          setAtlasLoaded(false);
-          return;
-        }
-
-        // Atlas exists, proceed with full load
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const atlasSize = dpr >= 2 ? 128 : 64;
-
-        console.log("🎯 Loading sprite atlas...");
-
-        return Promise.all([
-          fetch("/sprites/atlas.json").then(r => r.json()),
-          new Promise<HTMLImageElement>((resolve, reject) => {
-            const img = new Image();
-            const tryWebp = `/sprites/atlas-${atlasSize}.webp`;
-            const tryPng = `/sprites/atlas-${atlasSize}.png`;
-            
-            img.onload = () => resolve(img);
-            img.onerror = () => {
-              console.warn("WebP failed, trying PNG fallback");
-              const fallbackImg = new Image();
-              fallbackImg.onload = () => resolve(fallbackImg);
-              fallbackImg.onerror = reject;
-              fallbackImg.src = tryPng;
-            };
-            img.src = tryWebp;
-          })
-        ])
-        .then(([manifest, img]) => {
-          console.log(`✅ [ATLAS EFFECT] Atlas loaded successfully:`, {
-            spriteCount: Object.keys(manifest.sprites).length,
-            timestamp: performance.now(),
-            atlasLoaded: true
-          });
-          setAtlasManifest(manifest);
-          setAtlasImage(img);
-          
-          // Pre-pick sprite IDs for each bubble color/label
-          const pickedIds: Record<string, string> = {};
-          theme.bubbles.set.forEach(bubble => {
-            const tags = bubble.tags || [];
-            const spriteId = pickSpriteIdFromManifest(manifest, tags);
-            // Store by BOTH label and hex for flexible lookup
-            pickedIds[bubble.label] = spriteId;
-            pickedIds[bubble.hex] = spriteId;
-            console.log(`  ${bubble.label} → ${spriteId} (tags: ${tags.join(', ')})`);
-          });
-          
-          setAtlasSpriteIds(pickedIds);
-          setAtlasLoaded(true);
-        });
-      })
-      .catch(err => {
-        console.log("❌ [ATLAS EFFECT] Atlas loading failed:", {
-          error: err.message,
-          timestamp: performance.now(),
-          atlasLoaded: false
-        });
-        setAtlasLoaded(false);
-        setAtlasImage(null);
-        setAtlasManifest(null);
-      });
-  }, [theme.bubbles.atlasMode]);
-
-  // Preload spritesheet image
-  useEffect(() => {
-    const spritesheet = theme.bubbles.spritesheet;
-    console.log('🔄 [SPRITESHEET EFFECT] Starting...', {
-      hasSpritesheet: !!spritesheet,
-      timestamp: performance.now()
-    });
-    
-    if (!spritesheet) {
-      console.log('⏭️ [SPRITESHEET EFFECT] No spritesheet URL provided');
-      setSpritesheetLoaded(false);
-      return;
-    }
-
-    console.log('📥 [SPRITESHEET EFFECT] Starting async image load:', spritesheet);
-    const img = new Image();
-    img.onload = () => {
-      console.log("✅ [SPRITESHEET EFFECT] Spritesheet loaded successfully:", {
-        url: spritesheet,
-        timestamp: performance.now(),
-        spritesheetLoaded: true
-      });
-      setSpritesheetImage(img);
-      setSpritesheetLoaded(true);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "d") {
+        debugModeRef.current = !debugModeRef.current;
+        console.log(`🐛 Debug mode: ${debugModeRef.current ? "ON" : "OFF"}`);
+      }
     };
-    img.onerror = (e) => {
-      console.warn("❌ [SPRITESHEET EFFECT] Failed to load spritesheet:", {
-        url: spritesheet,
-        error: e,
-        timestamp: performance.now(),
-        spritesheetLoaded: false
-      });
-      setSpritesheetLoaded(false);
-    };
-    img.src = spritesheet;
-
-    return () => {
-      img.onload = null;
-      img.onerror = null;
-    };
-  }, [theme.bubbles.spritesheet]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Easing functions
   const easeOutBack = (t: number) => {
@@ -434,16 +311,20 @@ export const GameCanvas = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Don't start rendering until we have valid sprite sources ready
-    const hasValidSpriteSource = atlasLoaded || spritesheetLoaded;
-    if (theme.bubbles.atlasMode && !hasValidSpriteSource) {
-      console.log('⏸️ [ANIMATION] Waiting for assets to load before starting...', {
-        atlasLoaded,
-        spritesheetLoaded,
+    // CRITICAL: Don't start rendering until assets are ready
+    if (!assets.ready) {
+      console.log('⏸️ [ANIMATION] Assets not ready, loop will not start', {
+        mode: assets.mode,
+        ready: assets.ready,
         timestamp: performance.now()
       });
-      return; // Wait for assets to be ready
+      return;
     }
+
+    console.log('▶️ [ANIMATION] Starting loop with assets ready', {
+      mode: assets.mode,
+      timestamp: performance.now()
+    });
 
     const drawBubble = (
       ctx: CanvasRenderingContext2D, 
@@ -513,10 +394,10 @@ export const GameCanvas = ({
       ctx.stroke();
 
       // Draw icon: Priority = atlas > spritesheet > emoji
-      if (atlasLoaded && atlasManifest && atlasImage) {
-        const spriteId = atlasSpriteIds[bubble.color];
+      if (assets.mode === "atlas" && assets.atlasManifest && assets.atlasImage) {
+        const spriteId = assets.atlasSpriteIds[bubble.color];
         if (spriteId) {
-          const sprite = atlasManifest.sprites[spriteId];
+          const sprite = assets.atlasManifest.sprites[spriteId];
           if (sprite) {
             const dpr = Math.min(window.devicePixelRatio || 1, 2);
             const atlasSize = dpr >= 2 ? 128 : 64;
@@ -525,22 +406,18 @@ export const GameCanvas = ({
             if (frame) {
               const iconScale = (BUBBLE_RADIUS * 2 * scale * 0.7) / frame.w;
               ctx.drawImage(
-                atlasImage,
+                assets.atlasImage,
                 frame.x, frame.y, frame.w, frame.h,
                 bubble.x - (frame.w * iconScale) / 2,
                 bubble.y - (frame.h * iconScale) / 2,
                 frame.w * iconScale,
                 frame.h * iconScale
               );
-            } else {
-              console.warn(`⚠ No frame found for sprite ${spriteId} at size ${atlasSize}`);
             }
-          } else {
-            console.warn(`⚠ Sprite not found: ${spriteId}`);
           }
         }
       }
-      else if (spritesheetLoaded && spritesheetImage) {
+      else if (assets.mode === "sheet" && assets.spritesheetImage) {
         // Calculate source position in spritesheet
         const hexColor = colorMap[bubble.color];
         const iconIndex = bubbleColors.indexOf(hexColor);
@@ -561,19 +438,12 @@ export const GameCanvas = ({
           
           // Draw cropped section of spritesheet
           ctx.drawImage(
-            spritesheetImage,
+            assets.spritesheetImage,
             sourceX, sourceY, sourceSize, sourceSize, // source rect
             iconX, iconY, drawSize, drawSize           // dest rect
           );
           
           ctx.restore();
-        } else {
-          console.warn("⚠ Spritesheet icon index out of range:", { 
-            color: bubble.color, 
-            hexColor, 
-            iconIndex,
-            totalColors: bubbleColors.length 
-          });
         }
       } else if (bubble.emoji) {
         // Fallback: render emoji as before (but validate it's not text)
@@ -777,24 +647,11 @@ export const GameCanvas = ({
       // Log asset state on first frame only
       if (!firstFrameLoggedRef.current) {
         console.log('🎬 [FIRST FRAME] Animation started with asset state:', {
-          atlasMode: theme.bubbles.atlasMode,
-          atlasLoaded,
-          spritesheetLoaded,
-          hasAtlasManifest: !!atlasManifest,
-          hasAtlasImage: !!atlasImage,
-          hasSpritesheetImage: !!spritesheetImage,
-          canRenderBubbles: atlasLoaded || spritesheetLoaded,
+          mode: assets.mode,
+          ready: assets.ready,
           timestamp: now
         });
         firstFrameLoggedRef.current = true;
-      }
-      
-      // Safety check: Skip rendering if assets aren't ready yet (shouldn't happen with useEffect guard)
-      const canRenderBubbles = atlasLoaded || spritesheetLoaded;
-      if (theme.bubbles.atlasMode && !canRenderBubbles) {
-        console.warn('⚠️ [ANIMATION] Frame skipped - assets not ready');
-        requestAnimationFrame(animate);
-        return;
       }
 
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -1035,7 +892,7 @@ export const GameCanvas = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [gameState, shootingBubble, aimAngle, isAiming, poppingBubbles, fallingBubbles, onBubbleLanded, atlasLoaded, spritesheetLoaded, theme.bubbles.atlasMode]);
+  }, [gameState, shootingBubble, aimAngle, isAiming, poppingBubbles, fallingBubbles, onBubbleLanded, assets.ready, assets.mode]);
 
   // Expose methods to parent component
   useEffect(() => {
